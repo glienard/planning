@@ -1,0 +1,16 @@
+C:\github\planning\bin\Debug\netcoreapp3.1\Planning.exe
+C:\github\planning\bin\Debug\netcoreapp3.1\Planning.deps.json
+C:\github\planning\bin\Debug\netcoreapp3.1\Planning.runtimeconfig.json
+C:\github\planning\bin\Debug\netcoreapp3.1\Planning.runtimeconfig.dev.json
+C:\github\planning\bin\Debug\netcoreapp3.1\Planning.dll
+C:\github\planning\bin\Debug\netcoreapp3.1\Planning.pdb
+C:\github\planning\bin\Debug\netcoreapp3.1\Combinatorics.dll
+C:\github\planning\bin\Debug\netcoreapp3.1\System.ServiceModel.dll
+C:\github\planning\obj\Debug\netcoreapp3.1\Planning.csproj.CoreCompileInputs.cache
+C:\github\planning\obj\Debug\netcoreapp3.1\Planning.AssemblyInfoInputs.cache
+C:\github\planning\obj\Debug\netcoreapp3.1\Planning.AssemblyInfo.cs
+C:\github\planning\obj\Debug\netcoreapp3.1\Planning.csproj.CopyComplete
+C:\github\planning\obj\Debug\netcoreapp3.1\Planning.dll
+C:\github\planning\obj\Debug\netcoreapp3.1\Planning.pdb
+C:\github\planning\obj\Debug\netcoreapp3.1\Planning.genruntimeconfig.cache
+C:\GitHub\planning\obj\Debug\netcoreapp3.1\Planning.csprojAssemblyReference.cache
