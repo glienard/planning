@@ -205,10 +205,37 @@ namespace Planning
         {
             var allcombinationsperturn = new Combinations<string>(participants.Keys.ToList(), participantsperturn, GenerateOption.WithoutRepetition).ToList();
             long done = 0;
-            
+
+            List<IList<string>>[] combinationsperturn = new List<IList<string>>[turns.Count];
+            long maxcombinations = 1;
+            #region All valid combinations per turn.
+            for (int turn = 0; turn < turns.Count; turn++)
+            {
+                combinationsperturn[turn] = new List<IList<string>>();
+
+                foreach (var combination in allcombinationsperturn)
+                {
+                    var isvalid = true;
+
+                    foreach (var participant in combination)
+                    {
+                        if (unavailabilities.ContainsKey((turn, participant)))
+                        {
+                            isvalid = false;
+                            break;
+                        }
+                    }
+                    if (isvalid)
+                        combinationsperturn[turn].Add(combination);
+                }
+                maxcombinations = maxcombinations * combinationsperturn[turn].Count;
+            }
+            #endregion
+
             Random rnd = new Random();
             DateTime dtConsoleTitle = DateTime.Now;
             DateTime dtStart = DateTime.Now;
+           
 
             while (true)
             {
@@ -218,7 +245,7 @@ namespace Planning
                     if (DateTime.Now.Subtract(dtConsoleTitle).TotalSeconds > 1)
                     {
                         dtConsoleTitle = DateTime.Now;
-                        Console.Title = $"{done} done in {Math.Round(DateTime.Now.Subtract(dtStart).TotalHours, 2)} hours | {Math.Round(done / DateTime.Now.Subtract(dtStart).TotalHours, 0)} = {Math.Round((done) / DateTime.Now.Subtract(dtStart).TotalHours, 0)} per hour";
+                        Console.Title = $"{done}/{maxcombinations} ({Math.Round(done*100.0/maxcombinations,10)}%) done in {Math.Round(DateTime.Now.Subtract(dtStart).TotalHours, 2)} hours | {Math.Round(done / DateTime.Now.Subtract(dtStart).TotalHours, 0)} = {Math.Round((done) / DateTime.Now.Subtract(dtStart).TotalHours, 0)} per hour";
                     }
                 }
                 catch
@@ -231,8 +258,8 @@ namespace Planning
                 
                 for (int i = 0; i < turns.Count; i++)
                 {
-                    indexperturn = rnd.Next(0, allcombinationsperturn.Count);
-                    combination.Add(allcombinationsperturn[indexperturn]);
+                    indexperturn = rnd.Next(0, combinationsperturn[i].Count);
+                    combination.Add(combinationsperturn[i][indexperturn]);
                 }
                 Calculate(combination, done);
             }
