@@ -235,34 +235,36 @@ namespace Planning
             Random rnd = new Random();
             DateTime dtConsoleTitle = DateTime.Now;
             DateTime dtStart = DateTime.Now;
-           
 
-            while (true)
-            {
-                done++;
-                try
-                {
-                    if (DateTime.Now.Subtract(dtConsoleTitle).TotalSeconds > 1)
-                    {
-                        dtConsoleTitle = DateTime.Now;
-                        Console.Title = $"{done}/{maxcombinations} ({Math.Round(done*100.0/maxcombinations,10)}%) done in {Math.Round(DateTime.Now.Subtract(dtStart).TotalHours, 2)} hours | {Math.Round(done / DateTime.Now.Subtract(dtStart).TotalHours, 0)} = {Math.Round((done) / DateTime.Now.Subtract(dtStart).TotalHours, 0)} per hour";
-                    }
-                }
-                catch
-                {
-                    Console.WriteLine($"Console.title error");
-                }
 
-                var combination = new List<IList<string>>();
-                int indexperturn;
-                
-                for (int i = 0; i < turns.Count; i++)
-                {
-                    indexperturn = rnd.Next(0, combinationsperturn[i].Count);
-                    combination.Add(combinationsperturn[i][indexperturn]);
-                }
-                Calculate(combination, done);
-            }
+            //while (true)
+            Parallel.For(0, maxcombinations, x =>
+             {
+                 done++;
+                 try
+                 {
+                     if (DateTime.Now.Subtract(dtConsoleTitle).TotalSeconds > 1)
+                     {
+                         dtConsoleTitle = DateTime.Now;
+                         Console.Title = $"{done}/{maxcombinations} ({Math.Round(done * 100.0 / maxcombinations, 10)}%) done in {Math.Round(DateTime.Now.Subtract(dtStart).TotalHours, 2)} hours | {Math.Round(done / DateTime.Now.Subtract(dtStart).TotalHours, 0)} = {Math.Round((done) / DateTime.Now.Subtract(dtStart).TotalHours, 0)} per hour";
+                     }
+                 }
+                 catch
+                 {
+                     Console.WriteLine($"Console.title error");
+                 }
+
+                 var combination = new List<IList<string>>();
+                 int indexperturn;
+
+                 for (int i = 0; i < turns.Count; i++)
+                 {
+                     indexperturn = rnd.Next(0, combinationsperturn[i].Count);
+                     combination.Add(combinationsperturn[i][indexperturn]);
+                 }
+                 Calculate(combination, done);
+             }
+            );
 
         }
 
