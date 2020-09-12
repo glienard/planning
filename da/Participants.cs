@@ -10,6 +10,8 @@ namespace Planning.da
         public double IdealTurns { get; set; }
         public double IdealEveryXTurns { get; set; }
 
+        public List <int> PlannedTurns { get; set; }
+        public List<string> Partners { get; set; }
     }
 
     public class Unavailable

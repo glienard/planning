@@ -17,6 +17,7 @@ namespace Planning
         Dictionary<string, Participant> participants = new Dictionary<string, Participant>();
         Dictionary<(int, string), Unavailable> unavailabilities = new Dictionary<(int, string), Unavailable>();
         int participantsperturn = 8;
+        int partnersperparticipant = 2;
 
         public WinterTennis(int ParticipantsPerTurn)
         {
@@ -147,16 +148,19 @@ namespace Planning
             });
             #endregion
         }
+        double bestscore = double.MaxValue;
+        double weightidealturns = 0.4;
+        double weightidealturnsinbetween = 0.2;
+        double weightdifferentpartners = 0.6;
+        ConcurrentBag<IList<IList<string>>> BestCombos = new ConcurrentBag<IList<IList<string>>>();
 
-        public void Calculate ()
+
+        public void CalculateAll ()
         {
 
-            double weightidealturns = 0.4;
-            double weightidealturnsinbetween = 0.2;
-            double weightdifferentteams = 0.4;
-            double bestscore = double.MaxValue;
 
-            ConcurrentBag<IList<IList<string>>> BestCombos = new ConcurrentBag<IList<IList<string>>>();
+            
+
 
             var allcombinationsperturn = new Combinations<string>(participants.Keys.ToList(), participantsperturn, GenerateOption.WithoutRepetition).ToList();
             var allcombinations = new Combinations<IList<string>>(allcombinationsperturn, turns.Count, GenerateOption.WithoutRepetition);
@@ -165,7 +169,7 @@ namespace Planning
             DateTime dtConsoleTitle = DateTime.Now;
             DateTime dtStart = DateTime.Now;
 
-            //            foreach (var combination in allcombinations)
+            //foreach (var combination in allcombinations)
             Parallel.ForEach(allcombinations, (combination) =>
             {
                 done++;
@@ -176,124 +180,16 @@ namespace Planning
                         dtConsoleTitle = DateTime.Now;
                         Console.Title = $"{done}/{totaltodo} ({Math.Round(done*100.0/totaltodo,10)}%) done in {Math.Round(DateTime.Now.Subtract(dtStart).TotalHours, 2)} hours | {Math.Round(done / DateTime.Now.Subtract(dtStart).TotalHours, 0)} = {Math.Round((done) / DateTime.Now.Subtract(dtStart).TotalHours, 0)} per hour";
                     }
+                    Calculate(combination, done);
                 }
                 catch
                 {
                     Console.WriteLine($"Console.title error");
                 }
 
-                Dictionary<string, List<int>> perParticipant = new Dictionary<string, List<int>>(turns.Count);
-                bool allParticipantsAreAvailableInThisCombination = true;
-                #region Check if combination is valid
-                for (int turn = 0; turn < combination.Count; turn++)
-                {
-                    foreach (var participant in combination[turn])
-                    {
-                        if (unavailabilities.ContainsKey((turn, participant)))
-                        {
-                            allParticipantsAreAvailableInThisCombination = false;
-                            break;
-                        }
-                        if (perParticipant.ContainsKey(participant))
-                            perParticipant[participant].Add(turn);
-                        else
-                            perParticipant.Add(participant, new List<int> { turn });
+   
 
-                    }
-                    if (!allParticipantsAreAvailableInThisCombination)
-                    {
-                        break;
-                    }
-                }
-                if (!allParticipantsAreAvailableInThisCombination)
-                    return;
-                #endregion
 
-                #region Check ideal turns and turns inbetween.
-                bool worseAsBest = false;
-                if (allParticipantsAreAvailableInThisCombination)
-                {
-                    #region All participants must be at least once in the combination
-                    if (perParticipant.Count != participants.Count)
-                        return;
-                    #endregion
-
-                    double scoreidealturns = 0;
-                    double scoreidealturnsinbetween = 0;
-                    double scoredifferentteams = 0;
-                    foreach (var participant in participants)
-                    {
-                        var participantturns = perParticipant[participant.Key];
-                        double pidealturns = 0;
-                        double pidealturnsinbetween = 0;
-
-                        pidealturns += Math.Abs(participant.Value.IdealTurns - participantturns.Count);
-                        int previousturn = -1;
-                        for (int i = 0; i < participantturns.Count; i++)
-                        {
-                            #region if it's the last turn for this participant, take the worst between the previous one and the last turn.
-                            if (i == participantturns.Count - 1)
-                            {
-
-                                var previous = Math.Abs(participantturns[i] - previousturn - participant.Value.IdealEveryXTurns);
-
-                                var next = Math.Abs(participantturns.Count - 1 - i - participant.Value.IdealEveryXTurns);
-                                if (participantturns[i] < participant.Value.IdealEveryXTurns)
-                                    next = 0;
-
-                                pidealturnsinbetween += next > previous ? next : previous;
-                            }
-                            #endregion
-                            #region if the difference between the first time is less than the EveryXtimes, it's as good as possible.
-                            else if (i == 0 && participantturns[i] < participant.Value.IdealEveryXTurns)
-                                pidealturnsinbetween += 0;
-                            #endregion
-                            else
-
-                            {
-                                var delta = Math.Abs(participantturns[i] - previousturn - participant.Value.IdealEveryXTurns);
-                                pidealturnsinbetween += delta;
-                            }
-                            previousturn = participantturns[i];
-                        }
-
-                        Console.WriteLine($"{done} - {participant}: {pidealturns} ({(participant.Value.IdealTurns - pidealturns) * 100 / participant.Value.IdealTurns}%) T, {pidealturnsinbetween} ({(turns.Count - pidealturnsinbetween) * 100 / turns.Count}%) XT ");
-                        if (pidealturnsinbetween > turns.Count)
-                            Console.ReadKey();
-                        scoreidealturns += (participant.Value.IdealTurns - pidealturns) * weightidealturns / participant.Value.IdealTurns;
-                        scoreidealturnsinbetween += (turns.Count - pidealturnsinbetween) * weightidealturnsinbetween / turns.Count;
-
-                        if (scoreidealturns + scoreidealturnsinbetween > bestscore)
-                        {
-                            worseAsBest = true;
-                            break;
-                        }
-                    }
-                    if (worseAsBest)
-                        return;
-
-                    if (scoreidealturns + scoreidealturnsinbetween < bestscore)
-                    {
-                        BestCombos.Clear();
-                        BestCombos.Add(combination);
-                        bestscore = scoreidealturns + scoreidealturnsinbetween;
-
-                        Console.WriteLine($"new best found: {bestscore}");
-                        for (int i = 0; i < combination.Count; i++)
-                        {
-                            Console.Write($"{i}: ");
-                            foreach (var participant in combination[i])
-                            {
-                                Console.Write(participant + ", ");
-                            }
-                            Console.Write("\n");
-                        }
-                    }
-                    else if (scoreidealturns + scoreidealturnsinbetween == bestscore)
-                        BestCombos.Add(combination);
-
-                }
-                #endregion
             });
 
 
@@ -304,5 +200,201 @@ namespace Planning
 
 
         }
+
+        public void CalculateRandom()
+        {
+            var allcombinationsperturn = new Combinations<string>(participants.Keys.ToList(), participantsperturn, GenerateOption.WithoutRepetition).ToList();
+            long done = 0;
+            
+            Random rnd = new Random();
+            DateTime dtConsoleTitle = DateTime.Now;
+            DateTime dtStart = DateTime.Now;
+
+            while (true)
+            {
+                done++;
+                try
+                {
+                    if (DateTime.Now.Subtract(dtConsoleTitle).TotalSeconds > 1)
+                    {
+                        dtConsoleTitle = DateTime.Now;
+                        Console.Title = $"{done} done in {Math.Round(DateTime.Now.Subtract(dtStart).TotalHours, 2)} hours | {Math.Round(done / DateTime.Now.Subtract(dtStart).TotalHours, 0)} = {Math.Round((done) / DateTime.Now.Subtract(dtStart).TotalHours, 0)} per hour";
+                    }
+                }
+                catch
+                {
+                    Console.WriteLine($"Console.title error");
+                }
+
+                var combination = new List<IList<string>>();
+                int indexperturn;
+                
+                for (int i = 0; i < turns.Count; i++)
+                {
+                    indexperturn = rnd.Next(0, allcombinationsperturn.Count);
+                    combination.Add(allcombinationsperturn[indexperturn]);
+                }
+                Calculate(combination, done);
+            }
+
+        }
+
+        private void Calculate(IList<IList<string>> combination, long done)
+        {
+            #region Check if combination is valid
+            Dictionary<string, Participant> perParticipant = new Dictionary<string, Participant>();
+
+            for (int turn = 0; turn < combination.Count; turn++)
+            {
+                for (int iparticipant = 0; iparticipant < combination[turn].Count; iparticipant++)
+                //foreach (var participant in combination[turn])
+                {
+                    var participant = combination[turn][iparticipant];
+
+                    #region Add partners
+                    var partners = new List<string>();
+                    //if (iparticipant% partnersperparticipant == 0)
+                    //{
+                    //    for (int i=1;i<partnersperparticipant;i++)
+                    //        partners.Add(combination[turn][iparticipant + i]);
+                    //}
+                    //else
+                    {
+                        for (int i = 0; i < partnersperparticipant - 1 && i < iparticipant % partnersperparticipant; i++)
+                        {
+                            partners.Add(combination[turn][iparticipant - i - 1]);
+                        }
+                        for (int i = iparticipant % partnersperparticipant; i < partnersperparticipant - 1; i++)
+                        {
+                            partners.Add(combination[turn][iparticipant + i + 1]);
+                        }
+
+                    }
+
+
+                    #endregion
+                    if (unavailabilities.ContainsKey((turn, participant)))
+                    {
+                        return;
+                    }
+                    if (perParticipant.ContainsKey(participant))
+                    {
+                        perParticipant[participant].PlannedTurns.Add(turn);
+                        perParticipant[participant].Partners.AddRange(partners);
+                    }
+                    else
+                        perParticipant.Add(participant, new Participant() { Partners = partners, PlannedTurns = new List<int>() { turn } });
+
+
+                }
+            }
+            #endregion
+
+            #region Check ideal turns and turns inbetween.
+            bool worseAsBest = false;
+            #region All participants must be at least once in the combination
+            if (perParticipant.Count != participants.Count)
+                return;
+            #endregion
+
+            double scoreidealturns = 0;
+            double scoreidealturnsinbetween = 0;
+            double scoredifferentpartners = 0;
+            foreach (var participant in participants)
+            {
+
+                #region Check ideal turns
+                var participantturns = perParticipant[participant.Key].PlannedTurns;
+                double pidealturns = 0;
+                pidealturns += Math.Abs(participant.Value.IdealTurns - participantturns.Count);
+                if (pidealturns > 0)
+                    return;
+                #endregion
+
+                #region Check turns inbetween.
+                double pidealturnsinbetween = 0;
+
+
+                int previousturn = -1;
+                for (int i = 0; i < participantturns.Count; i++)
+                {
+
+                    #region if the difference between the first time is less than the EveryXtimes, it's as good as possible.
+                    if (i == 0 && participantturns[i] < participant.Value.IdealEveryXTurns)
+                        pidealturnsinbetween += 0;
+                    #endregion
+                    #region calculate difference betwee 
+
+                    #endregion
+                    else
+
+                    {
+                        var delta = Math.Abs(participantturns[i] - previousturn - participant.Value.IdealEveryXTurns);
+                        pidealturnsinbetween += delta;
+                    }
+                    #region if it's the last turn for this participant, take between last turn and the last possible turn.
+                    if (i == participantturns.Count - 1)
+                    {
+                        var next = Math.Abs(turns.Count - participantturns[i] - participant.Value.IdealEveryXTurns);
+                        if (turns.Count - participantturns[i] < participant.Value.IdealEveryXTurns)
+                            next = 0;
+                        pidealturnsinbetween += next;
+                    }
+                    #endregion
+                    previousturn = participantturns[i];
+                }
+                #endregion
+
+                #region Check differentiation of partners. TODO: What if the amount of turns > amount of possible partners???
+                var allpartners = perParticipant[participant.Key].Partners;
+                var partners = allpartners.GroupBy(x => x).Select(g => new { g.Key, SamePartner = g.Count() });
+                var samepartners = partners.Where(x => x.SamePartner > 1).Select(x => x.SamePartner - 1).Sum();
+                if (samepartners > 0)
+                    return;
+
+                #endregion
+
+                //Console.WriteLine($"{done} - {participant}: {pidealturns} ({Math.Round((participant.Value.IdealTurns - pidealturns) * 100 / participant.Value.IdealTurns, 0)}%) T, {pidealturnsinbetween} ({Math.Round((turns.Count - pidealturnsinbetween) * 100 / turns.Count, 0)}%) XT, {samepartners}P ({Math.Round(samepartners * 100.0 / (participantturns.Count - 1), 0)}% ");
+                if (pidealturnsinbetween > turns.Count)
+                {
+                    Console.ReadKey();
+                }
+                scoreidealturns += (pidealturns/participant.Value.IdealTurns) * weightidealturns;
+                scoreidealturnsinbetween += (pidealturnsinbetween / turns.Count) * weightidealturnsinbetween ;
+                scoredifferentpartners += samepartners*1.0/(participantturns.Count-1) * weightdifferentpartners;
+
+                if (scoreidealturns + scoreidealturnsinbetween + scoredifferentpartners > bestscore)
+                {
+                    worseAsBest = true;
+                    return;
+                }
+            }
+
+            if (scoreidealturns + scoreidealturnsinbetween + scoredifferentpartners < bestscore)
+            {
+                BestCombos.Clear();
+                BestCombos.Add(combination);
+                bestscore = scoreidealturns + scoreidealturnsinbetween;
+
+                Console.WriteLine($"new best found: {bestscore}");
+                for (int i = 0; i < combination.Count; i++)
+                {
+                    Console.Write($"{i}: ");
+                    foreach (var participant in combination[i])
+                    {
+                        Console.Write(participant + ", ");
+                    }
+                    Console.Write("\n");
+                }
+            }
+            else if (scoreidealturns + scoreidealturnsinbetween == bestscore)
+                BestCombos.Add(combination);
+
+
+            #endregion
+        }
+
+
+
     }
 }
