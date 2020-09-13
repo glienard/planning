@@ -7,7 +7,7 @@ namespace Planning
         static void Main(string[] args)
         {
             WinterTennis wt = new WinterTennis(8);
-            wt.CalculateRandom();
+            wt.Calculate();
         }
     }
 }

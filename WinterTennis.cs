@@ -7,6 +7,9 @@ using Combinatorics.Collections;
 using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
+using System.Text.RegularExpressions;
+using System.Security.Cryptography.X509Certificates;
+using System.Net.Http.Headers;
 
 namespace Planning
 {
@@ -154,6 +157,201 @@ namespace Planning
         double weightdifferentpartners = 0.6;
         ConcurrentBag<IList<IList<string>>> BestCombos = new ConcurrentBag<IList<IList<string>>>();
 
+        public void Calculate ()
+        {
+            var allcombinationsperturn = new Combinations<string>(participants.Keys.ToList(), participantsperturn, GenerateOption.WithoutRepetition).ToList();
+            long done = 0;
+
+            List<IList<string>>[] combinationsperturn = new List<IList<string>>[turns.Count];
+            //long maxcombinations = 1;
+            #region All valid combinations per turn.
+            for (int turn = 0; turn < turns.Count; turn++)
+            {
+                combinationsperturn[turn] = new List<IList<string>>();
+
+                foreach (var combination in allcombinationsperturn)
+                {
+                    var isvalid = true;
+
+                    foreach (var participant in combination)
+                    {
+                        if (unavailabilities.ContainsKey((turn, participant)))
+                        {
+                            isvalid = false;
+                            break;
+                        }
+                    }
+                    if (isvalid)
+                        combinationsperturn[turn].Add(combination);
+                }
+                //maxcombinations = maxcombinations * combinationsperturn[turn].Count;
+            }
+            #endregion
+            DateTime dtConsoleTitle = DateTime.Now;
+            DateTime dtStart = DateTime.Now;
+
+            #region Initiaze counters on 0
+            List<int> counter = new List<int>(turns.Count);
+            for (int i = 0; i < turns.Count; i++)
+                counter.Add(0);
+            #endregion
+
+            var currentcombo = new List<IList<string>>(turns.Count);
+            bool valid = false;
+            bool next = false;
+            bool alldone = false;
+            while(!alldone)
+            {
+                next = false;
+                done++;
+                try
+                {
+                    if (DateTime.Now.Subtract(dtConsoleTitle).TotalSeconds > 1)
+                    {
+                        dtConsoleTitle = DateTime.Now;
+                        StringBuilder sb = new StringBuilder();
+                        for (int i = 0; i < turns.Count; i++)
+                            sb.Append($"|{i}:{counter[i]}");
+                        Console.Title = $"{done} ({Math.Round(counter[0]*100.0/combinationsperturn[0].Count,2)}%) done in {Math.Round(DateTime.Now.Subtract(dtStart).TotalHours, 2)} hours | {Math.Round(done / DateTime.Now.Subtract(dtStart).TotalHours, 0)} = {Math.Round((done) / DateTime.Now.Subtract(dtStart).TotalHours, 0)} per hour {sb.ToString()}";
+                    }
+                }
+                catch
+                {
+                    Console.WriteLine($"Console.title error");
+                }
+
+                currentcombo.Clear();
+                currentcombo.Add(combinationsperturn[0][counter[0]]);
+                //currentcombo.Add(combinationsperturn[1][counter[1]]);
+                //valid = isValidCombo(currentcombo);
+                //if (!valid)
+                //{
+                //    counter[1]++;
+                //    if (counter[1]>=combinationsperturn[1].Count)
+                //    {
+                //        counter[0]++;
+                //        if (counter[0] >= combinationsperturn[0].Count)
+                //            break;
+                //        counter[1] = 0;
+                //    }
+                //    continue;
+                //}
+                //currentcombo.Add(combinationsperturn[2][counter[2]]);
+                //valid = isValidCombo(currentcombo);
+                //if (!valid)
+                //{
+                //    counter[2]++;
+                //    if (counter[2] >= combinationsperturn[2].Count)
+                //    {
+                //        counter[2] = 0;
+                //        counter[1]++;
+                //        if (counter[1] >= combinationsperturn[1].Count)
+                //        {
+                //            counter[0]++;
+                //            if (counter[0] >= combinationsperturn[0].Count)
+                //                break;
+                //            counter[1] = 0;
+                //        }
+                //    }
+                //    continue;
+                //}
+                for (int turn = 1; turn < turns.Count; turn++)
+                {
+                    currentcombo.Add(combinationsperturn[turn][counter[turn]]);
+                    valid = isValidCombo(currentcombo);
+                    if (!valid)
+                    {
+                        for (int goback = turn; goback >= 0; goback--)
+                        {
+                            counter[goback]++;
+                            if (counter[goback] >= combinationsperturn[turn].Count)
+                            {
+                                counter[goback] = 0;
+                                if (goback == 0)
+                                    alldone = true;
+                            }
+                            else
+                            {
+                                next = true;
+                                break;
+                            }
+                        }
+                        break;
+                    }
+                }
+                if (!next)
+                    Calculate(currentcombo, done);
+                       
+              
+
+
+            }
+
+
+
+
+        }
+
+        private bool isValidCombo (IList<IList<string>> combination)
+        {
+            #region Check if combination is valid
+            Dictionary<string, Participant> perParticipant = new Dictionary<string, Participant>();
+
+            for (int turn = 0; turn < combination.Count; turn++)
+            {
+                for (int iparticipant = 0; iparticipant < combination[turn].Count; iparticipant++)
+                {
+                    var participant = combination[turn][iparticipant];
+
+                    #region Add partners
+                    var partners = new List<string>();
+
+                    {
+                        for (int i = 0; i < partnersperparticipant - 1 && i < iparticipant % partnersperparticipant; i++)
+                        {
+                            partners.Add(combination[turn][iparticipant - i - 1]);
+                        }
+                        for (int i = iparticipant % partnersperparticipant; i < partnersperparticipant - 1; i++)
+                        {
+                            partners.Add(combination[turn][iparticipant + i + 1]);
+                        }
+
+                    }
+
+
+                    #endregion
+                    if (perParticipant.ContainsKey(participant))
+                    {
+                        perParticipant[participant].PlannedTurns.Add(turn);
+                        perParticipant[participant].Partners.AddRange(partners);
+                    }
+                    else
+                        perParticipant.Add(participant, new Participant() { IdealEveryXTurns=participants[participant].IdealEveryXTurns, IdealTurns=participants[participant].IdealTurns, Name=participant,  Partners = partners, PlannedTurns = new List<int>() { turn } });
+
+
+                }
+            }
+
+            #endregion
+            foreach (var participant in perParticipant)
+                {
+                    #region Check ideal turns
+                    if (participant.Value.PlannedTurns.Count > Math.Ceiling(participant.Value.IdealTurns))
+                        return false;
+                    #endregion
+
+                    #region Check differentiation of partners. 
+                    var partners = participant.Value.Partners.GroupBy(x => x).Select(g => new { g.Key, SamePartner = g.Count() });
+
+                    var samepartners = partners.Any(x => x.SamePartner > Math.Ceiling(participant.Value.IdealTurns / (participants.Count - 1)));
+                    if (samepartners)
+                        return false;
+
+                    #endregion
+                }
+                return true;
+ 
+        }
 
         public void CalculateAll ()
         {
