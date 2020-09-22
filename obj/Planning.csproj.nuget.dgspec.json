@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\GitHub\\planning\\Planning.csproj": {}
+    "C:\\Users\\Gregory Liénard\\Source\\Repos\\planning\\Planning.csproj": {}
   },
   "projects": {
-    "C:\\GitHub\\planning\\Planning.csproj": {
+    "C:\\Users\\Gregory Liénard\\Source\\Repos\\planning\\Planning.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\GitHub\\planning\\Planning.csproj",
+        "projectUniqueName": "C:\\Users\\Gregory Liénard\\Source\\Repos\\planning\\Planning.csproj",
         "projectName": "Planning",
-        "projectPath": "C:\\GitHub\\planning\\Planning.csproj",
+        "projectPath": "C:\\Users\\Gregory Liénard\\Source\\Repos\\planning\\Planning.csproj",
         "packagesPath": "C:\\Users\\Gregory Liénard\\.nuget\\packages\\",
-        "outputPath": "C:\\GitHub\\planning\\obj\\",
+        "outputPath": "C:\\Users\\Gregory Liénard\\Source\\Repos\\planning\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
