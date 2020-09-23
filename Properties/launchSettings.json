@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Planning": {
+      "commandName": "Project",
+      "commandLineArgs": "random "
+    }
+  }
+}

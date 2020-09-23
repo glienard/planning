@@ -1158,7 +1158,7 @@
       ]
     },
     "Microsoft.NETCore.Platforms/1.0.1": {
-      "sha512": "2G6OjjJzwBfNOO8myRV/nFrbTw5iA+DEm0N+qUqhrOmaVtn4pC77h38I1jsXGw5VH55+dPfQsqHD0We9sCl9FQ==",
+      "sha512": "oq9B289GvIVAo9xfJFNBuuLiE55OopBcS3oZlSYyispEcCigEcs6X6CJM4lfQVXegTkx+o2Z6Xx9EYcpHPKGfA==",
       "type": "package",
       "path": "microsoft.netcore.platforms/1.0.1",
       "files": [
@@ -2429,7 +2429,7 @@
       ]
     },
     "System.Net.Http/4.1.0": {
-      "sha512": "ULq9g3SOPVuupt+Y3U+A37coXzdNisB1neFCSKzBwo182u0RDddKJF8I5+HfyXqK6OhJPgeoAwWXrbiUXuRDsg==",
+      "sha512": "QxY0x5iEkwaZqjPJC1EoWrjWnDPEcu7nf69tnfOx32BNb3V5cLvHwDOZDC0Vbx6MGGVOpnSHUtP0UY0lvtCvSg==",
       "type": "package",
       "path": "system.net.http/4.1.0",
       "files": [
@@ -4285,11 +4285,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Gregory Liénard\\Source\\Repos\\planning\\Planning.csproj",
+      "projectUniqueName": "C:\\GitHub\\planning\\Planning.csproj",
       "projectName": "Planning",
-      "projectPath": "C:\\Users\\Gregory Liénard\\Source\\Repos\\planning\\Planning.csproj",
+      "projectPath": "C:\\GitHub\\planning\\Planning.csproj",
       "packagesPath": "C:\\Users\\Gregory Liénard\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Gregory Liénard\\Source\\Repos\\planning\\obj\\",
+      "outputPath": "C:\\GitHub\\planning\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
